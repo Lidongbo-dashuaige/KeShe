@@ -18,6 +18,7 @@ function handleLogout() {
 function goToProfile() {
   showDropdown.value = false;
   router.push('/profile');
+//
 }
 
 function getAvatar() {
