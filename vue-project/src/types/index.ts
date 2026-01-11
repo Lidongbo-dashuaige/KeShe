@@ -43,6 +43,12 @@ export interface User {
   updatedAt?: string;
 }
 
+//ai相关
+export interface ChatForm {
+  memoryId: string;
+  userMessage: String;
+}
+
 // Result类型（如果需要）
 export interface Result<T = any> {
   success: boolean;

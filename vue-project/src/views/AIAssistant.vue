@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter, RouterLink } from 'vue-router';
 import { useUserStore } from '../stores/user';
+import { aiApi } from '../api/ai'
 
 const router = useRouter();
 const { isLoggedIn, user, logout } = useUserStore();
@@ -51,6 +52,7 @@ onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
 });
 
+//TODO 快捷方式无效
 const quickQuestions = [
   { icon: '📝', text: '帮我解释这道题' },
   { icon: '💡', text: '提供解题思路' },
@@ -60,6 +62,7 @@ const quickQuestions = [
   { icon: '🎯', text: '制定学习计划' }
 ];
 
+//TODO 模板无效
 const templates = [
   {
     id: 'explain',
@@ -97,94 +100,37 @@ function sendMessage() {
 
   isLoading.value = true;
 
-  setTimeout(() => {
-    const responses: Record<string, string> = {
-      'explain': `好的，让我来分析这道题：
+  // 创建10秒超时的Promise
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => {
+      reject(new Error('请求超时，请稍后重试'));
+    }, 10000);
+  });
 
-**题目理解**
-这道题要求找出数组的所有子数组中，和最大的那一个。
-
-**解题思路**
-1. 使用动态规划，定义 dp[i] 表示以第 i 个元素结尾的子数组的最大和
-2. 状态转移方程：dp[i] = max(nums[i], dp[i-1] + nums[i])
-3. 答案就是 max(dp[i]) 的值
-
-**时间复杂度**：O(n)
-**空间复杂度**：O(1)
-
-**关键点**
-- 注意处理全负数的情况
-- 不要遗漏单个元素的情况`,
-      'wrong': `分析你的错误原因：
-
-**常见问题**
-1. 对概念理解不够深入，只是死记硬背
-2. 缺乏举一反三的能力
-3. 没有建立知识之间的联系
-
-**建议方案**
-1. 先理解为什么选择前序/中序/后序遍历
-2. 思考遍历顺序与结果的关系
-3. 多画图理解二叉树的结构
-4. 尝试自己手动模拟遍历过程`,
-      'knowledge': `动态规划（Dynamic Programming）是一种优化算法思想：
-
-**核心思想**
-- 将复杂问题分解为子问题
-- 存储子问题的解，避免重复计算
-- 利用子问题的解构建原问题的解
-
-**适用条件**
-1. 最优子结构
-2. 无后效性
-3. 重叠子问题
-
-**经典应用**
-- 背包问题
-- 最长公共子序列
-- 最短路径问题
-- 股票买卖问题`,
-      'plan': `根据你的目标，我为你制定了一个月的学习计划：
-
-**第一周：基础**
-- 数组与字符串
-- 链表基础操作
-- 栈与队列
-
-**第二周：核心数据结构**
-- 哈希表
-- 二叉树基础
-- 堆与优先队列
-
-**第三周：算法思想**
-- 递归与回溯
-- 动态规划入门
-- 双指针与滑动窗口
-
-**第四周：综合训练**
-- 模拟面试
-- 错题复习
-- 高频面试题`
-    };
-
-    messages.value.push({
-      role: 'assistant',
-      content: responses[selectedTemplate.value] || `收到你的问题：${userInput.value}
-
-作为 AI 助手，我可以帮你：
-
-1. **题目解析** - 详细解释题目要求和考点
-2. **思路分析** - 提供多种解题思路和优化方法
-3. **代码实现** - 给出清晰的代码示例
-4. **错误分析** - 帮你找出薄弱环节
-5. **知识拓展** - 推荐相关学习资源
-
-请告诉我更多具体信息，我会提供更详细的帮助！`
+  // 使用Promise.race实现超时检测
+  Promise.race([
+    aiApi.getAiResponse({
+      memoryId: selectedTemplate.value,
+      userMessage: userInput.value,
+    }),
+    timeoutPromise
+  ])
+    .then((response) => {
+      messages.value.push({
+        role: 'assistant',
+        content: response as unknown as string
+      });
+    })
+    .catch((error) => {
+      console.error('获取AI响应失败:', error);
+      messages.value.push({
+        role: 'assistant',
+        content: error.message || '抱歉，获取AI响应失败，请稍后重试。'
+      });
+    })
+    .finally(() => {
+      isLoading.value = false;
     });
-
-    isLoading.value = false;
-  }, 1500);
-
   userInput.value = '';
   selectedTemplate.value = '';
 }
@@ -247,11 +193,7 @@ function clearChat() {
         <div class="features-section">
           <h3>快捷功能</h3>
           <div class="quick-actions">
-            <button 
-              v-for="q in quickQuestions" 
-              :key="q.text"
-              class="quick-btn"
-            >
+            <button v-for="q in quickQuestions" :key="q.text" class="quick-btn">
               <span class="quick-icon">{{ q.icon }}</span>
               <span>{{ q.text }}</span>
             </button>
@@ -261,12 +203,8 @@ function clearChat() {
         <div class="templates-section">
           <h3>对话模板</h3>
           <div class="templates-list">
-            <button 
-              v-for="template in templates" 
-              :key="template.id"
-              :class="['template-btn', { active: selectedTemplate === template.id }]"
-              @click="useTemplate(template)"
-            >
+            <button v-for="template in templates" :key="template.id"
+              :class="['template-btn', { active: selectedTemplate === template.id }]" @click="useTemplate(template)">
               <span class="template-title">{{ template.title }}</span>
               <span class="template-desc">{{ template.placeholder.split('，')[0] }}</span>
             </button>
@@ -298,11 +236,7 @@ function clearChat() {
         </div>
 
         <div class="messages-container">
-          <div 
-            v-for="(msg, index) in messages" 
-            :key="index"
-            :class="['message', msg.role]"
-          >
+          <div v-for="(msg, index) in messages" :key="index" :class="['message', msg.role]">
             <div class="message-avatar">
               {{ msg.role === 'assistant' ? '🤖' : '👤' }}
             </div>
@@ -325,17 +259,9 @@ function clearChat() {
 
         <div class="input-area">
           <div class="input-wrapper">
-            <textarea
-              v-model="userInput"
-              placeholder="输入您的问题，或选择上面的模板..."
-              rows="3"
-              @keydown.enter.exact.prevent="sendMessage"
-            ></textarea>
-            <button 
-              class="send-btn" 
-              @click="sendMessage"
-              :disabled="!userInput.trim() || isLoading"
-            >
+            <textarea v-model="userInput" placeholder="输入您的问题..." rows="3"
+              @keydown.enter.exact.prevent="sendMessage"></textarea>
+            <button class="send-btn" @click="sendMessage" :disabled="!userInput.trim() || isLoading">
               <span>发送</span>
               <span class="send-icon">➤</span>
             </button>
@@ -410,7 +336,7 @@ function clearChat() {
   align-items: center;
   padding: 20px 40px;
   background: white;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .logo a {
@@ -438,9 +364,10 @@ function clearChat() {
   transition: all 0.3s;
 }
 
-.nav a:hover, .nav a.active {
+.nav a:hover,
+.nav a.active {
   color: #667eea;
-  background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%);
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
 }
 
 .user-actions {
@@ -448,7 +375,8 @@ function clearChat() {
   gap: 15px;
 }
 
-.btn-login, .btn-register {
+.btn-login,
+.btn-register {
   padding: 10px 24px;
   border-radius: 25px;
   text-decoration: none;
@@ -483,14 +411,22 @@ function clearChat() {
   gap: 20px;
 }
 
-.features-section, .templates-section, .tips-section, .recommend-section, .stats-section {
+.features-section,
+.templates-section,
+.tips-section,
+.recommend-section,
+.stats-section {
   background: white;
   padding: 25px;
   border-radius: 15px;
-  box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+  box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
 }
 
-.features-section h3, .templates-section h3, .tips-section h3, .recommend-section h3, .stats-section h3 {
+.features-section h3,
+.templates-section h3,
+.tips-section h3,
+.recommend-section h3,
+.stats-section h3 {
   font-size: 18px;
   color: #333;
   margin-bottom: 20px;
@@ -518,7 +454,7 @@ function clearChat() {
 }
 
 .quick-btn:hover {
-  background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%);
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
   color: #667eea;
 }
 
@@ -542,9 +478,10 @@ function clearChat() {
   transition: all 0.3s;
 }
 
-.template-btn:hover, .template-btn.active {
+.template-btn:hover,
+.template-btn.active {
   border-color: #667eea;
-  background: rgba(102,126,234,0.05);
+  background: rgba(102, 126, 234, 0.05);
 }
 
 .template-title {
@@ -586,7 +523,7 @@ function clearChat() {
   flex: 1;
   background: white;
   border-radius: 15px;
-  box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+  box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -704,9 +641,13 @@ function clearChat() {
 }
 
 @keyframes bounce {
-  0%, 80%, 100% {
+
+  0%,
+  80%,
+  100% {
     transform: scale(0);
   }
+
   40% {
     transform: scale(1);
   }
@@ -795,7 +736,7 @@ function clearChat() {
 }
 
 .recommend-item:hover {
-  background: rgba(102,126,234,0.1);
+  background: rgba(102, 126, 234, 0.1);
 }
 
 .rec-icon {
@@ -832,7 +773,7 @@ function clearChat() {
 .stat-item {
   text-align: center;
   padding: 15px 10px;
-  background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%);
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
   border-radius: 10px;
 }
 
