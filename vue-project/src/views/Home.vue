@@ -36,12 +36,13 @@ const features = [
 ];
 
 const hotTopics = [
-  { id: 1, name: '数据结构与算法', count: 1256, difficulty: '中等' },
-  { id: 2, name: '机器学习基础', count: 892, difficulty: '入门' },
-  { id: 3, name: '深度学习实战', count: 654, difficulty: '进阶' },
-  { id: 4, name: 'Python 编程', count: 2341, difficulty: '入门' },
-  { id: 5, name: '数据库原理', count: 756, difficulty: '中等' },
-  { id: 6, name: '操作系统', count: 543, difficulty: '困难' }
+  { id: 16, name: '数据结构', count: 10, difficulty: '中等' },
+  { id: 1, name: 'Java基础', count: 5, difficulty: '入门' },
+  { id: 2, name: 'Python基础', count: 3, difficulty: '入门' },
+  { id: 3, name: '数据库', count: 3, difficulty: '中等' },
+  { id: 4, name: 'Web开发', count: 3, difficulty: '中等' },
+  { id: 5, name: '操作系统', count: 2, difficulty: '困难' },
+  { id: 17, name: '计算机网络', count: 8, difficulty: '进阶' }
 ];
 
 const stats = [
@@ -52,7 +53,7 @@ const stats = [
 ];
 
 function goToTopic(id: number) {
-  router.push(`/topic/${id}`);
+  router.push({ path: '/practice', query: { categoryId: id.toString() } });
 }
 
 function goToPractice() {

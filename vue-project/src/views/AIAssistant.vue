@@ -1,5 +1,26 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
+import { useRouter, RouterLink } from 'vue-router';
+import { useUserStore } from '../stores/user';
+
+const router = useRouter();
+const { isLoggedIn, user, logout } = useUserStore();
+const showDropdown = ref(false);
+
+function toggleDropdown() {
+  showDropdown.value = !showDropdown.value;
+}
+
+function handleLogout() {
+  logout();
+  showDropdown.value = false;
+  router.push('/');
+}
+
+function goToProfile() {
+  showDropdown.value = false;
+  router.push('/profile');
+}
 
 const messages = ref([
   {
@@ -11,6 +32,24 @@ const messages = ref([
 const userInput = ref('');
 const isLoading = ref(false);
 const selectedTemplate = ref('');
+
+// 添加点击外部关闭下拉菜单的功能
+function handleClickOutside(event: MouseEvent) {
+  const target = event.target as HTMLElement;
+  if (!target.closest('.user-avatar-dropdown')) {
+    showDropdown.value = false;
+  }
+}
+
+// 生命周期钩子：组件挂载后添加事件监听
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+});
+
+// 生命周期钩子：组件卸载前移除事件监听
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
 
 const quickQuestions = [
   { icon: '📝', text: '帮我解释这道题' },
@@ -179,9 +218,25 @@ function clearChat() {
         <router-link to="/practice">刷题</router-link>
         <router-link to="/ai-assistant" class="active">AI 助手</router-link>
       </nav>
-      <div class="user-actions">
+      <div class="user-actions" v-if="!user">
         <router-link to="/login" class="btn-login">登录</router-link>
         <router-link to="/register" class="btn-register">注册</router-link>
+      </div>
+      <div class="user-actions" v-else>
+        <div class="user-avatar-dropdown" @click.stop>
+          <div class="user-avatar" @click.stop="toggleDropdown">
+            <span class="avatar-icon">{{ user?.avatar || '👤' }}</span>
+            <span class="username">{{ user?.username || '用户' }}</span>
+          </div>
+          <div class="dropdown-menu" v-if="showDropdown" @click.stop>
+            <div class="dropdown-item" @click.stop="handleLogout">
+              <span class="dropdown-icon">🚪</span>退出登录
+            </div>
+            <div class="dropdown-item" @click.stop="goToProfile">
+              <span class="dropdown-icon">👤</span>个人中心
+            </div>
+          </div>
+        </div>
       </div>
     </header>
 

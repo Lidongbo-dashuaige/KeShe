@@ -67,21 +67,6 @@ const recentActivity = ref<Activity[]>([
   { type: 'practice', topic: '深度学习实战', score: 78, date: '2024-01-17', time: '20:45' }
 ]);
 
-const achievements = ref<Achievement[]>([
-  { id: 1, name: '初学者', icon: '🌟', description: '完成第一道题', earned: true },
-  { id: 2, name: '连续学习', icon: '🔥', description: '连续学习 7 天', earned: true },
-  { id: 3, name: '准确率高', icon: '🎯', description: '正确率达到 90%', earned: false },
-  { id: 4, name: '题海战术', icon: '📚', description: '完成 1000 道题', earned: true },
-  { id: 5, name: '全对达人', icon: '💯', description: '一次练习全部正确', earned: false },
-  { id: 6, name: '深夜学习', icon: '🌙', description: '凌晨 2 点后还在学习', earned: true }
-]);
-
-const favoriteTopics = ref<FavoriteTopic[]>([
-  { id: 1, name: '数据结构与算法', progress: 75, icon: '📊' },
-  { id: 2, name: '机器学习基础', progress: 60, icon: '🤖' },
-  { id: 3, name: 'Python 编程', progress: 90, icon: '🐍' }
-]);
-
 const weeklyStats = ref<WeeklyStat[]>([
   { day: '周一', questions: 45, time: 45 },
   { day: '周二', questions: 62, time: 55 },
@@ -250,20 +235,6 @@ function handleLogout() {
             <span>学习记录</span>
           </button>
           <button
-            :class="['menu-item', { active: activeTab === 'achievements' }]"
-            @click="activeTab = 'achievements'"
-          >
-            <span class="menu-icon">🏆</span>
-            <span>成就勋章</span>
-          </button>
-          <button
-            :class="['menu-item', { active: activeTab === 'favorites' }]"
-            @click="activeTab = 'favorites'"
-          >
-            <span class="menu-icon">❤️</span>
-            <span>我的收藏</span>
-          </button>
-          <button
             :class="['menu-item', { active: activeTab === 'settings' }]"
             @click="activeTab = 'settings'"
           >
@@ -281,7 +252,13 @@ function handleLogout() {
       <main class="main-content">
         <div v-if="activeTab === 'overview'" class="tab-content">
           <div class="content-header">
-            <h1>数据概览</h1>
+            <div class="header-top">
+              <button class="back-btn" @click="router.go(-1)">
+                <span>←</span>
+                <span>返回</span>
+              </button>
+              <h1>数据概览</h1>
+            </div>
             <p>您的学习数据统计与分析</p>
           </div>
 
@@ -357,7 +334,13 @@ function handleLogout() {
 
         <div v-if="activeTab === 'activity'" class="tab-content">
           <div class="content-header">
-            <h1>学习记录</h1>
+            <div class="header-top">
+              <button class="back-btn" @click="router.go(-1)">
+                <span>←</span>
+                <span>返回</span>
+              </button>
+              <h1>学习记录</h1>
+            </div>
             <p>查看您的历史学习记录</p>
           </div>
 
@@ -382,51 +365,15 @@ function handleLogout() {
           </div>
         </div>
 
-        <div v-if="activeTab === 'achievements'" class="tab-content">
-          <div class="content-header">
-            <h1>成就勋章</h1>
-            <p>解锁成就，展示您的学习成就</p>
-          </div>
-
-          <div class="achievements-grid">
-            <div
-              v-for="achievement in achievements"
-              :key="achievement.id"
-              :class="['achievement-card', { earned: achievement.earned, locked: !achievement.earned }]"
-            >
-              <div class="achievement-icon">{{ achievement.icon }}</div>
-              <h3>{{ achievement.name }}</h3>
-              <p>{{ achievement.description }}</p>
-              <span v-if="achievement.earned" class="earned-badge">已获得</span>
-              <span v-else class="locked-badge">未解锁</span>
-            </div>
-          </div>
-        </div>
-
-        <div v-if="activeTab === 'favorites'" class="tab-content">
-          <div class="content-header">
-            <h1>我的收藏</h1>
-            <p>您收藏的题库和学习资料</p>
-          </div>
-
-          <div class="favorites-list">
-            <div v-for="topic in favoriteTopics" :key="topic.id" class="favorite-item">
-              <span class="favorite-icon">{{ topic.icon }}</span>
-              <div class="favorite-info">
-                <h3>{{ topic.name }}</h3>
-                <div class="progress-bar">
-                  <div class="progress-fill" :style="{ width: topic.progress + '%' }"></div>
-                </div>
-                <span class="progress-text">{{ topic.progress }}% 完成度</span>
-              </div>
-              <button class="continue-btn">继续学习</button>
-            </div>
-          </div>
-        </div>
-
         <div v-if="activeTab === 'settings'" class="tab-content">
           <div class="content-header">
-            <h1>个人设置</h1>
+            <div class="header-top">
+              <button class="back-btn" @click="router.go(-1)">
+                <span>←</span>
+                <span>返回</span>
+              </button>
+              <h1>个人设置</h1>
+            </div>
             <p>管理您的账户设置</p>
           </div>
 
@@ -722,10 +669,37 @@ function handleLogout() {
   margin-bottom: 32px;
 }
 
+.header-top {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #f5f5f5;
+  color: #666;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.back-btn:hover {
+  background: #e8e8e8;
+  color: #333;
+}
+
 .content-header h1 {
   font-size: 26px;
   color: #333;
   margin-bottom: 8px;
+  margin-top: 0;
 }
 
 .content-header p {
@@ -894,127 +868,6 @@ function handleLogout() {
   color: white;
   border-radius: 12px;
   font-size: 12px;
-}
-
-.achievements-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-}
-
-.achievement-card {
-  padding: 28px;
-  border-radius: 14px;
-  text-align: center;
-  background: #f8f9fa;
-  transition: all 0.2s;
-}
-
-.achievement-card.earned {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-  border: 2px solid #667eea;
-}
-
-.achievement-card.locked {
-  opacity: 0.5;
-}
-
-.achievement-icon {
-  font-size: 48px;
-  margin-bottom: 14px;
-}
-
-.achievement-card h3 {
-  font-size: 17px;
-  color: #333;
-  margin-bottom: 8px;
-}
-
-.achievement-card p {
-  font-size: 13px;
-  color: #666;
-  margin-bottom: 14px;
-}
-
-.earned-badge {
-  padding: 4px 14px;
-  background: #52c41a;
-  color: white;
-  border-radius: 12px;
-  font-size: 12px;
-}
-
-.locked-badge {
-  padding: 4px 14px;
-  background: #999;
-  color: white;
-  border-radius: 12px;
-  font-size: 12px;
-}
-
-.favorites-list {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.favorite-item {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  padding: 24px;
-  background: #f8f9fa;
-  border-radius: 12px;
-}
-
-.favorite-icon {
-  font-size: 36px;
-}
-
-.favorite-info {
-  flex: 1;
-}
-
-.favorite-info h3 {
-  font-size: 17px;
-  color: #333;
-  margin-bottom: 14px;
-}
-
-.progress-bar {
-  height: 6px;
-  background: #e0e0e0;
-  border-radius: 3px;
-  overflow: hidden;
-  margin-bottom: 6px;
-}
-
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #667eea, #764ba2);
-  border-radius: 3px;
-}
-
-.progress-text {
-  font-size: 13px;
-  color: #666;
-}
-
-.continue-btn {
-  padding: 10px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.continue-btn:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
 }
 
 .settings-form {

@@ -1,104 +1,184 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useUserStore } from '../stores/user';
+import { getQuestionsByCategory } from '../api/questionApi';
+import { RouterLink } from 'vue-router';
 
+const route = useRoute();
+const router = useRouter();
+const { isLoggedIn, user, logout } = useUserStore();
 const currentQuestionIndex = ref(0);
 const selectedAnswer = ref<number | null>(null);
 const showAnswer = ref(false);
 const answers = ref<number[]>([]);
 const timeSpent = ref(0);
 const isComplete = ref(false);
+const isLoading = ref(false);
+const error = ref('');
+const showDropdown = ref(false);
 
-const topicName = '数据结构与算法';
+function toggleDropdown() {
+  showDropdown.value = !showDropdown.value;
+}
 
-const questions = [
-  {
-    id: 1,
-    type: 'single',
-    difficulty: '中等',
-    question: '以下哪种数据结构可以实现 O(1) 时间复杂度的插入和删除操作（平均情况）？',
-    options: [
-      { id: 0, text: '数组（Array）' },
-      { id: 1, text: '链表（Linked List）' },
-      { id: 2, text: '哈希表（Hash Table）' },
-      { id: 3, text: '二叉搜索树（BST）' }
-    ],
-    correctAnswer: 2,
-    explanation: '哈希表在平均情况下支持 O(1) 时间的插入、删除和查找操作。数组的插入和删除需要移动元素，链表虽然插入删除是 O(1) 但查找是 O(n)，二叉搜索树的操作是 O(log n)。',
-    aiHint: '这道题考察的是数据结构的时间复杂度特性。哈希表通过哈希函数直接计算存储位置，因此具有优秀的平均时间性能。'
-  },
-  {
-    id: 2,
-    type: 'single',
-    difficulty: '中等',
-    question: '在二叉堆中，插入一个新元素的时间复杂度是？',
-    options: [
-      { id: 0, text: 'O(1)' },
-      { id: 1, text: 'O(log n)' },
-      { id: 2, text: 'O(n)' },
-      { id: 3, text: 'O(n log n)' }
-    ],
-    correctAnswer: 1,
-    explanation: '二叉堆插入元素时，需要将元素放到末尾，然后进行上浮操作。上浮操作的时间复杂度取决于堆的高度，即 O(log n)。',
-    aiHint: '注意二叉堆的结构特性：是完全二叉树，高度为 log n。上浮和下沉操作都需要沿路径进行，因此是 O(log n)。'
-  },
-  {
-    id: 3,
-    type: 'single',
-    difficulty: '困难',
-    question: '给定一个数组 [3, 1, 4, 1, 5, 9, 2, 6]，使用快速排序算法，第一轮排序后的数组状态是？（以第一个元素为基准）',
-    options: [
-      { id: 0, text: '[1, 1, 2, 3, 4, 5, 6, 9]' },
-      { id: 1, text: '[2, 1, 1, 3, 5, 4, 9, 6]' },
-      { id: 2, text: '[1, 3, 2, 1, 5, 4, 9, 6]' },
-      { id: 3, text: '[1, 1, 2, 3, 4, 5, 6, 9]' }
-    ],
-    correctAnswer: 1,
-    explanation: '基准为 3，从右往左找比 3 小的 2，交换；从左往右找比 3 大的 4，交换；继续移动指针，最后将基准放到正确位置。过程：3,1,4,1,5,9,2,6 → 2,1,4,1,5,9,3,6 → 2,1,3,1,5,9,4,6',
-    aiHint: '快速排序的分区过程要仔细模拟。注意指针移动的方向和交换的时机。最终基准会放到正确的位置，左边都比它小，右边都比它大。'
-  },
-  {
-    id: 4,
-    type: 'single',
-    difficulty: '入门',
-    question: '下列关于 BFS（广度优先搜索）的描述，错误的是？',
-    options: [
-      { id: 0, text: 'BFS 使用队列来实现' },
-      { id: 1, text: 'BFS 能找到最短路径（在无权图中）' },
-      { id: 2, text: 'BFS 的空间复杂度通常是 O(V)' },
-      { id: 3, text: 'BFS 总是比 DFS 效率更高' }
-    ],
-    correctAnswer: 3,
-    explanation: 'BFS 和 DFS 的效率取决于具体场景。对于某些问题（如找最短路径）BFS 更优，而对于其他问题 DFS 可能更快。不能说 BFS 总是比 DFS 效率高。',
-    aiHint: '这道题是找错误的描述。要注意各种算法的适用场景，没有绝对的优劣之分，只有在特定问题下的相对优劣。'
-  },
-  {
-    id: 5,
-    type: 'single',
-    difficulty: '进阶',
-    question: '使用动态规划解决最长公共子序列（LCS）问题的时间复杂度和空间复杂度分别是？',
-    options: [
-      { id: 0, text: 'O(mn) 时间，O(mn) 空间' },
-      { id: 1, text: 'O(mn) 时间，O(min(m,n)) 空间' },
-      { id: 2, text: 'O(m+n) 时间，O(m+n) 空间' },
-      { id: 3, text: 'O(2^n) 时间，O(n) 空间' }
-    ],
-    correctAnswer: 1,
-    explanation: '标准 DP 解法是 O(mn) 时间。如果只需要 LCS 长度，可以用滚动数组优化到 O(min(m,n)) 空间。如果需要回溯路径，则需要 O(mn) 空间。',
-    aiHint: '经典 DP 问题。状态转移方程 dp[i][j] = dp[i-1][j-1] + 1 或 max(dp[i-1][j], dp[i][j-1])。空间优化技巧值得掌握。'
+function handleLogout() {
+  logout();
+  showDropdown.value = false;
+  router.push('/');
+}
+
+function goToProfile() {
+  showDropdown.value = false;
+  router.push('/profile');
+}
+
+// 获取URL参数中的分类ID
+const categoryId = computed(() => {
+  return parseInt(route.query.categoryId as string) || 1;
+});
+
+const topicName = ref('题库');
+
+// 定义题目数据类型
+interface Option {
+  id: number;
+  text: string;
+}
+
+interface Question {
+  id: number;
+  type: string;
+  difficulty: string;
+  question: string;
+  options: Option[];
+  correctAnswer: number;
+  explanation: string;
+  aiHint: string;
+}
+
+const questions = ref<Question[]>([]);
+
+// 从后端API获取题目数据
+async function fetchQuestions() {
+    isLoading.value = true;
+    error.value = '';
+    try {
+      console.log('开始获取题目数据，分类ID:', categoryId.value);
+      const response: any = await getQuestionsByCategory(categoryId.value);
+      console.log('API响应:', response);
+      
+      // 确保response存在
+      if (!response) {
+        error.value = '获取题目数据失败：服务器未返回数据';
+        questions.value = [];
+        return;
+      }
+      
+      // 获取实际的响应数据
+      const responseData = response.data || {};
+      
+      // 根据API返回格式提取题目数据
+      let questionsData = [];
+      if (responseData) {
+        if (Array.isArray(responseData)) {
+          // 直接返回题目数组
+          questionsData = responseData;
+        } else if (Array.isArray(responseData.questions)) {
+          // 返回格式为 { questions: [...] }
+          questionsData = responseData.questions;
+          topicName.value = responseData.categoryName || '题库';
+        } else if (responseData.success === true && responseData.data && Array.isArray(responseData.data.questions)) {
+          // 返回格式为 { success: true, data: { questions: [...] } }
+          questionsData = responseData.data.questions;
+          topicName.value = responseData.data.categoryName || '题库';
+        } else if (responseData.success === false) {
+          // API返回错误
+          error.value = responseData.message || '获取题目数据失败';
+          questions.value = [];
+          return;
+        }
+      }
+      
+      console.log('提取的题目数据:', questionsData);
+      
+      if (Array.isArray(questionsData) && questionsData.length > 0) {
+        const apiQuestions = questionsData.map((q: any) => {
+          // 确保q是一个对象
+          if (!q || typeof q !== 'object') {
+            return {
+              id: 0,
+              type: 'single',
+              difficulty: '中等',
+              question: '题目数据异常',
+              options: Array(4).fill(0).map((_, index: number) => ({
+                id: index,
+                text: `选项 ${String.fromCharCode(65 + index)}`
+              })),
+              correctAnswer: 0,
+              explanation: '暂无解析',
+              aiHint: '暂无提示'
+            };
+          }
+          
+          return {
+            id: q.id || 0,
+            type: q.type === 1 ? 'single' : 'multiple', // 1=单选题，2=多选题
+            difficulty: q.difficulty ? ['入门', '中等', '困难', '进阶'][q.difficulty - 1] || '中等' : '中等',
+            question: q.title || '',
+            // 处理选项，确保options字段存在
+            options: Array.isArray(q.options) ? q.options.map((opt: any, index: number) => ({
+              id: index,
+              text: opt.content || opt.text || '' // 兼容content和text字段
+            })) : Array(4).fill(0).map((_, index: number) => ({
+              id: index,
+              text: `选项 ${String.fromCharCode(65 + index)}`
+            })),
+            correctAnswer: q.correctAnswer ?? 0, // 确保有默认值
+            explanation: q.explanation || '暂无解析',
+            aiHint: q.aiHint || '暂无提示'
+          };
+        });
+        
+        console.log('处理后的题目数据:', apiQuestions);
+        questions.value = apiQuestions;
+        
+        // 如果没有题目，显示错误信息
+        const questionsLength = (questions.value || []).length;
+        if (questionsLength === 0) {
+          error.value = '该分类下暂无题目';
+        }
+      } else {
+        // 如果questionsData不是数组或为空，显示错误信息
+        error.value = '获取题目数据失败：数据格式不正确或无题目';
+        questions.value = [];
+      }
+    } catch (err: any) {
+      console.error('获取题目数据失败:', err);
+      error.value = '获取题目数据失败，请稍后重试';
+      questions.value = [];
+    } finally {
+      isLoading.value = false;
+    }
   }
-];
 
-const currentQuestion = computed(() => questions[currentQuestionIndex.value]);
-const progress = computed(() => ((currentQuestionIndex.value + 1) / questions.length) * 100);
-const correctCount = computed(() => answers.value.filter((a, i) => a === questions[i].correctAnswer).length);
+const currentQuestion = computed(() => questions.value[currentQuestionIndex.value] || null);
+const progress = computed(() => (questions.value || []).length > 0 ? ((currentQuestionIndex.value + 1) / (questions.value || []).length) * 100 : 0);
+const correctCount = computed(() => {
+  // 安全计算正确答案数量
+  return answers.value.filter((a, i) => {
+    const question = questions.value[i];
+    return question && a === question.correctAnswer;
+  }).length;
+});
 
 function selectAnswer(index: number) {
-  if (showAnswer.value) return;
+  if (showAnswer.value || isLoading.value) return;
   selectedAnswer.value = index;
 }
 
 function submitAnswer() {
-  if (selectedAnswer.value === null) return;
+  if (selectedAnswer.value === null || isLoading.value) return;
   
   if (answers.value.length > currentQuestionIndex.value) {
     answers.value[currentQuestionIndex.value] = selectedAnswer.value;
@@ -110,12 +190,13 @@ function submitAnswer() {
 }
 
 function nextQuestion() {
-  if (currentQuestionIndex.value < questions.length - 1) {
+  const questionsLength = (questions.value || []).length;
+  if (questionsLength > 0 && currentQuestionIndex.value < questionsLength - 1) {
     currentQuestionIndex.value++;
     selectedAnswer.value = answers.value[currentQuestionIndex.value] ?? null;
     showAnswer.value = selectedAnswer.value !== null;
   } else {
-    isComplete.value = true;
+    isComplete.value = questionsLength > 0;
   }
 }
 
@@ -128,11 +209,15 @@ function prevQuestion() {
 }
 
 function getOptionClass(index: number) {
+  // 添加防御性检查
+  const question = currentQuestion.value;
+  if (!question) return '';
+  
   if (!showAnswer.value) {
     return selectedAnswer.value === index ? 'selected' : '';
   }
-  if (index === currentQuestion.value.correctAnswer) return 'correct';
-  if (index === selectedAnswer.value && selectedAnswer.value !== currentQuestion.value.correctAnswer) return 'wrong';
+  if (question.correctAnswer !== undefined && index === question.correctAnswer) return 'correct';
+  if (selectedAnswer.value !== null && index === selectedAnswer.value && question.correctAnswer !== undefined && selectedAnswer.value !== question.correctAnswer) return 'wrong';
   return '';
 }
 
@@ -150,6 +235,27 @@ function formatTime(seconds: number) {
   const secs = seconds % 60;
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
+
+// 当分类ID变化时重新获取题目
+watch(categoryId, () => {
+  fetchQuestions();
+  restart();
+});
+
+// 组件挂载时获取数据
+onMounted(() => {
+  fetchQuestions();
+  
+  // 启动计时器
+  const timer = setInterval(() => {
+    if (!isComplete.value && !isLoading.value) {
+      timeSpent.value++;
+    }
+  }, 1000);
+  
+  // 组件卸载时清理计时器
+  return () => clearInterval(timer);
+});
 </script>
 
 <template>
@@ -168,9 +274,27 @@ function formatTime(seconds: number) {
         <router-link to="/practice" class="active">刷题</router-link>
         <router-link to="/ai-assistant">AI 助手</router-link>
       </nav>
-      <div class="user-actions">
+      <div class="user-actions" v-if="!user">
         <router-link to="/login" class="btn-login">登录</router-link>
         <router-link to="/register" class="btn-register">注册</router-link>
+      </div>
+      <div class="user-actions" v-else>
+        <div class="user-avatar-dropdown" @click.stop>
+          <div class="user-avatar" @click.stop="toggleDropdown">
+            <span class="avatar-icon">{{ user?.avatar || '👤' }}</span>
+            <span class="username">{{ user?.username || '用户' }}</span>
+          </div>
+          <div class="dropdown-menu" v-if="showDropdown" @click.stop>
+            <div class="dropdown-item" @click.stop="handleLogout">
+              <span class="dropdown-icon">🚪</span>
+              退出登录
+            </div>
+            <div class="dropdown-item" @click.stop="goToProfile">
+              <span class="dropdown-icon">👤</span>
+              个人中心
+            </div>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -181,9 +305,9 @@ function formatTime(seconds: number) {
         <h1>刷题完成！</h1>
         <div class="score-display">
           <div class="score-circle">
-            <span class="score">{{ Math.round((correctCount / questions.length) * 100) }}%</span>
-            <span class="label">正确率</span>
-          </div>
+          <span class="score">{{ (questions || []).length > 0 ? Math.round((correctCount / (questions || []).length) * 100) : 0 }}%</span>
+          <span class="label">正确率</span>
+        </div>
         </div>
         <div class="result-stats">
           <div class="stat">
@@ -191,7 +315,7 @@ function formatTime(seconds: number) {
             <span class="label">正确题数</span>
           </div>
           <div class="stat">
-            <span class="value">{{ questions.length - correctCount }}</span>
+            <span class="value">{{ (questions || []).length - correctCount }}</span>
             <span class="label">错误题数</span>
           </div>
           <div class="stat">
@@ -212,7 +336,7 @@ function formatTime(seconds: number) {
       <aside class="sidebar">
         <div class="topic-info">
           <h3>{{ topicName }}</h3>
-          <span class="question-count">题目 {{ currentQuestionIndex + 1 }}/{{ questions.length }}</span>
+          <span class="question-count">题目 {{ currentQuestionIndex + 1 }}/{{ (questions || []).length }}</span>
         </div>
         
         <div class="progress-info">
@@ -231,13 +355,13 @@ function formatTime(seconds: number) {
           <h4>题目列表</h4>
           <div class="navigator-grid">
             <button
-              v-for="(q, index) in questions"
-              :key="q.id"
+              v-for="(q, index) in (questions || [])"
+              :key="q.id || index"
               :class="['nav-btn', {
                 'current': index === currentQuestionIndex,
                 'answered': answers[index] !== undefined,
-                'correct': showAnswer && answers[index] === q.correctAnswer,
-                'wrong': showAnswer && answers[index] !== undefined && answers[index] !== q.correctAnswer
+                'correct': showAnswer && answers[index] !== undefined && q?.correctAnswer !== undefined && answers[index] === q?.correctAnswer,
+                'wrong': showAnswer && answers[index] !== undefined && q?.correctAnswer !== undefined && answers[index] !== q?.correctAnswer
               }]"
               @click="currentQuestionIndex = index"
             >
@@ -250,49 +374,58 @@ function formatTime(seconds: number) {
       <!-- 题目区域 -->
       <main class="main-content">
         <div class="question-card">
-          <div class="question-header">
-            <span :class="['difficulty-badge', currentQuestion.difficulty]">{{ currentQuestion.difficulty }}</span>
-            <span class="question-type">单选题</span>
-          </div>
-          
-          <div class="question-body">
-            <p class="question-text">{{ currentQuestion.question }}</p>
-          </div>
+          <div v-if="currentQuestion" class="question-content">
+            <div class="question-header">
+              <span :class="['difficulty-badge', currentQuestion?.difficulty]">{{ currentQuestion?.difficulty }}</span>
+              <span class="question-type">{{ currentQuestion?.type === 'single' ? '单选题' : '多选题' }}</span>
+            </div>
+              
+            <div class="question-body">
+              <p class="question-text">{{ currentQuestion?.question }}</p>
+            </div>
 
-          <div class="options">
-            <button
-              v-for="(option, index) in currentQuestion.options"
-              :key="index"
-              :class="['option-btn', getOptionClass(index)]"
-              @click="selectAnswer(index)"
-              :disabled="showAnswer"
-            >
-              <span class="option-letter">{{ String.fromCharCode(65 + index) }}</span>
-              <span class="option-text">{{ option.text }}</span>
-              <span v-if="showAnswer && index === currentQuestion.correctAnswer" class="option-mark">✓</span>
-              <span v-if="showAnswer && index === selectedAnswer && selectedAnswer !== currentQuestion.correctAnswer" class="option-mark">✗</span>
-            </button>
-          </div>
+            <div class="options">
+              <button
+                v-for="(option, index) in (currentQuestion?.options || [])"
+                :key="index"
+                :class="['option-btn', getOptionClass(index)]"
+                @click="selectAnswer(index)"
+                :disabled="showAnswer"
+              >
+                <span class="option-letter">{{ String.fromCharCode(65 + index) }}</span>
+                <span class="option-text">{{ option.text }}</span>
+                <span v-if="showAnswer && currentQuestion && index === currentQuestion?.correctAnswer" class="option-mark">✓</span>
+                <span v-if="showAnswer && selectedAnswer !== null && index === selectedAnswer && currentQuestion && selectedAnswer !== currentQuestion?.correctAnswer" class="option-mark">✗</span>
+              </button>
+            </div>
 
-          <!-- AI 解析 -->
-          <div v-if="showAnswer" class="analysis-section">
-            <div class="ai-hint">
-              <span class="ai-icon">🤖</span>
-              <div class="ai-content">
-                <h4>AI 提示</h4>
-                <p>{{ currentQuestion.aiHint }}</p>
+            <!-- AI 解析 -->
+            <div v-if="showAnswer && currentQuestion" class="analysis-section">
+              <div class="ai-hint">
+                <span class="ai-icon">🤖</span>
+                <div class="ai-content">
+                  <h4>AI 提示</h4>
+                  <p>{{ currentQuestion?.aiHint }}</p>
+                </div>
+              </div>
+              <div class="explanation">
+                <h4>答案解析</h4>
+                <p><strong>正确答案：</strong>{{ currentQuestion?.correctAnswer !== undefined ? String.fromCharCode(65 + currentQuestion?.correctAnswer) : '暂无' }}. {{ currentQuestion?.options?.[currentQuestion?.correctAnswer]?.text || '暂无' }}</p>
+                <p>{{ currentQuestion?.explanation }}</p>
               </div>
             </div>
-            <div class="explanation">
-              <h4>答案解析</h4>
-              <p><strong>正确答案：</strong>{{ String.fromCharCode(65 + currentQuestion.correctAnswer) }}. {{ currentQuestion.options[currentQuestion.correctAnswer].text }}</p>
-              <p>{{ currentQuestion.explanation }}</p>
-            </div>
+          </div>
+          <div v-else-if="isLoading" class="loading">
+            <div class="loading-spinner">加载中...</div>
+          </div>
+          <div v-else class="no-data">
+            <div class="no-data-icon">📭</div>
+            <p>暂无题目数据</p>
           </div>
 
           <div class="question-actions">
-            <button 
-              class="btn-prev" 
+            <button
+              class="btn-prev"
               @click="prevQuestion"
               :disabled="currentQuestionIndex === 0"
             >
@@ -313,7 +446,7 @@ function formatTime(seconds: number) {
               class="btn-next" 
               @click="nextQuestion"
             >
-              {{ currentQuestionIndex < questions.length - 1 ? '下一题' : '查看结果' }}
+              {{ currentQuestionIndex < (questions || []).length - 1 ? '下一题' : '查看结果' }}
             </button>
           </div>
         </div>

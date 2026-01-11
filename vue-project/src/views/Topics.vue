@@ -1,104 +1,109 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useUserStore } from '../stores/user';
+import { getQuestionCategories } from '../api/questionApi';
 
+const router = useRouter();
+const { isLoggedIn, user, logout } = useUserStore();
 const searchKeyword = ref('');
 const selectedCategory = ref('全部');
 const selectedDifficulty = ref('全部');
+const isLoading = ref(false);
+const showDropdown = ref(false);
 
-const categories = ['全部', '数据结构与算法', '机器学习', '深度学习', 'Python', '数据库', '操作系统', '计算机网络'];
+function toggleDropdown() {
+  showDropdown.value = !showDropdown.value;
+}
+
+function handleLogout() {
+  logout();
+  showDropdown.value = false;
+  router.push('/');
+}
+
+function goToProfile() {
+  showDropdown.value = false;
+  router.push('/profile');
+}
+
+// 定义分类数据类型
+interface Topic {
+  id: number;
+  name: string;
+  description: string;
+  questionCount: number;
+  difficulty: string;
+  category: string;
+  icon: string;
+  completionRate: number;
+  avgScore: number;
+}
+
+const topics = ref<Topic[]>([]);
+const categories = ref(['全部']);
 const difficulties = ['全部', '入门', '中等', '困难', '进阶'];
 
-const topics = ref([
-  {
-    id: 1,
-    name: '数据结构与算法',
-    description: '涵盖数组、链表、栈、队列、树、图等核心数据结构与算法',
-    questionCount: 1256,
-    difficulty: '中等',
-    category: '数据结构与算法',
-    icon: '📊',
-    completionRate: 78,
-    avgScore: 82
-  },
-  {
-    id: 2,
-    name: '机器学习基础',
-    description: '机器学习基本概念、监督学习、无监督学习、模型评估',
-    questionCount: 892,
-    difficulty: '入门',
-    category: '机器学习',
-    icon: '🤖',
-    completionRate: 65,
-    avgScore: 75
-  },
-  {
-    id: 3,
-    name: '深度学习实战',
-    description: '神经网络、CNN、RNN、Transformer 等深度学习模型',
-    questionCount: 654,
-    difficulty: '进阶',
-    category: '深度学习',
-    icon: '🧠',
-    completionRate: 52,
-    avgScore: 68
-  },
-  {
-    id: 4,
-    name: 'Python 编程',
-    description: 'Python 基础语法、面向对象、常用库、爬虫入门',
-    questionCount: 2341,
-    difficulty: '入门',
-    category: 'Python',
-    icon: '🐍',
-    completionRate: 85,
-    avgScore: 88
-  },
-  {
-    id: 5,
-    name: '数据库原理',
-    description: '关系型数据库、SQL 查询、索引优化、事务处理',
-    questionCount: 756,
-    difficulty: '中等',
-    category: '数据库',
-    icon: '🗄️',
-    completionRate: 70,
-    avgScore: 79
-  },
-  {
-    id: 6,
-    name: '操作系统',
-    description: '进程管理、内存管理、文件系统、设备管理',
-    questionCount: 543,
-    difficulty: '困难',
-    category: '操作系统',
-    icon: '💻',
-    completionRate: 45,
-    avgScore: 62
-  },
-  {
-    id: 7,
-    name: '计算机网络',
-    description: 'TCP/IP 协议栈、网络分层、HTTP/HTTPS、DNS',
-    questionCount: 689,
-    difficulty: '中等',
-    category: '计算机网络',
-    icon: '🌐',
-    completionRate: 72,
-    avgScore: 76
-  },
-  {
-    id: 8,
-    name: 'LeetCode 精选',
-    description: 'LeetCode 高频面试题，涵盖各难度级别',
-    questionCount: 500,
-    difficulty: '困难',
-    category: '数据结构与算法',
-    icon: '⚡',
-    completionRate: 60,
-    avgScore: 71
+// 从后端API获取分类数据
+async function fetchTopics() {
+  isLoading.value = true;
+  try {
+    const response = await getQuestionCategories();
+    if (response) {
+      // 获取实际的响应数据
+      const responseData = response.data || {};
+      
+      // 将API返回的分类数据转换为前端需要的格式
+      let topicsData;
+      if (Array.isArray(responseData)) {
+        topicsData = responseData;
+      } else if (Array.isArray(responseData.data)) {
+        topicsData = responseData.data;
+      } else if (responseData.success === true && Array.isArray(responseData.data)) {
+        topicsData = responseData.data;
+      } else if (responseData.success === false) {
+        // API返回错误
+        console.error('获取分类数据失败：', responseData.message);
+        topics.value = [];
+        return;
+      }
+      
+      if (Array.isArray(topicsData)) {
+        const apiTopics = topicsData.map((category: any) => ({
+          id: category.id,
+          name: category.name,
+          description: category.description || '暂无描述',
+          questionCount: category.questionCount || 0,
+          difficulty: category.difficulty ? ['入门', '中等', '困难', '进阶'][category.difficulty - 1] || '中等' : '中等',
+          category: category.name,
+          icon: ['📊', '🤖', '🧠', '🐍', '🗄️', '💻', '🌐', '⚡'][category.id % 8] || '📊',
+          completionRate: Math.floor(Math.random() * 30) + 50, // 模拟完成率
+          avgScore: Math.floor(Math.random() * 20) + 70 // 模拟平均分
+        }));
+        
+        topics.value = apiTopics;
+        
+        // 更新分类筛选选项
+        categories.value = ['全部', ...apiTopics.map(topic => topic.name)];
+      } else {
+        // 如果topicsData不是数组，显示错误信息
+        console.error('获取分类数据失败：数据格式不正确');
+        topics.value = [];
+      }
+    } else {
+      // 如果response为空，显示错误信息
+      console.error('获取分类数据失败：服务器未返回数据');
+      topics.value = [];
+    }
+  } catch (error) {
+    console.error('获取分类数据失败:', error);
+    topics.value = [];
+  } finally {
+    isLoading.value = false;
   }
-]);
+}
 
+// 过滤分类
 const filteredTopics = computed(() => {
   return topics.value.filter(topic => {
     const matchKeyword = topic.name.includes(searchKeyword.value) || 
@@ -109,9 +114,15 @@ const filteredTopics = computed(() => {
   });
 });
 
+// 跳转到刷题页面
 function goToPractice(topicId: number) {
-  console.log('进入刷题:', topicId);
+  router.push({ path: '/practice', query: { categoryId: topicId.toString() } });
 }
+
+// 组件挂载时获取数据
+onMounted(() => {
+  fetchTopics();
+});
 </script>
 
 <template>
@@ -130,9 +141,27 @@ function goToPractice(topicId: number) {
         <router-link to="/practice">刷题</router-link>
         <router-link to="/ai-assistant">AI 助手</router-link>
       </nav>
-      <div class="user-actions">
+      <div class="user-actions" v-if="!user">
         <router-link to="/login" class="btn-login">登录</router-link>
         <router-link to="/register" class="btn-register">注册</router-link>
+      </div>
+      <div class="user-actions" v-else>
+        <div class="user-avatar-dropdown" @click.stop>
+          <div class="user-avatar" @click.stop="toggleDropdown">
+            <span class="avatar-icon">{{ user?.avatar || '👤' }}</span>
+            <span class="username">{{ user?.username || '用户' }}</span>
+          </div>
+          <div class="dropdown-menu" v-if="showDropdown" @click.stop>
+            <div class="dropdown-item" @click.stop="handleLogout">
+              <span class="dropdown-icon">🚪</span>
+              退出登录
+            </div>
+            <div class="dropdown-item" @click.stop="goToProfile">
+              <span class="dropdown-icon">👤</span>
+              个人中心
+            </div>
+          </div>
+        </div>
       </div>
     </header>
 

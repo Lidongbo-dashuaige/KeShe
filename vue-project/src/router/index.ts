@@ -35,9 +35,9 @@ const router = createRouter({
   routes
 });
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   const userStore = useUserStore();
-  const isLoggedIn = !!userStore.user.value;
+  const isLoggedIn = userStore.isLoggedIn();
   
   if (to.meta.requiresAuth && !isLoggedIn) {
     next({ path: '/login', query: { redirect: to.fullPath } });

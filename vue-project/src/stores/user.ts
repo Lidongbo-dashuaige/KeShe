@@ -10,13 +10,18 @@ interface User {
 
 const user = ref<User | null>(null);
 
+console.log('Initializing user store, current user:', user.value);
+
 function loadUserFromStorage() {
   const stored = localStorage.getItem('user');
+  console.log('Loading user from storage:', stored);
   if (stored) {
     try {
-      user.value = JSON.parse(stored);
+      const parsed = JSON.parse(stored);
+      user.value = parsed;
+      console.log('User loaded from storage:', user.value);
     } catch (e) {
-      console.error('Failed to parse user from localStorage');
+      console.error('Failed to parse user from localStorage:', e);
     }
   }
 }
@@ -43,7 +48,7 @@ export function useUserStore() {
 
   return {
     user,
-    isLoggedIn: user,
+    isLoggedIn: () => !!user.value,
     setUser,
     logout,
     updateUser

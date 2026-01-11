@@ -1,9 +1,4 @@
-export interface Result<T = any> {
-  success: boolean;
-  errorMsg?: string;
-  data?: T;
-  total?: number;
-}
+import type { Result, TopicQuery, TopicForm, Topic } from '../types';
 
 const API_BASE = 'http://localhost:8080/api';
 
