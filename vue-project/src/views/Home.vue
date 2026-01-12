@@ -1,15 +1,10 @@
-function handleLogout() {
-  console.log('退出登录按钮被点击');  // 1. 打印日志
-  logout();                            // 2. 清除登录状态（清空 user store 和 localStorage）
-  showDropdown.value = false;          // 3. 关闭下拉菜单
-  router.push('/');                    // 4. 跳转到首页
-}<script setup lang="ts">
+<script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../stores/user';
 
 const router = useRouter();
-const { isLoggedIn, user, logout } = useUserStore();
+const { user, logout } = useUserStore();
 const showDropdown = ref(false);
 
 const features = [

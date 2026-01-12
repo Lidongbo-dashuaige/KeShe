@@ -27,7 +27,12 @@ async function handleLogin() {
     const res = await userApi.login(form.value);
     console.log('登录响应:', res);
     if (res.success && res.data) {
-      setUser(res.data);
+      // 从响应中提取 user 和 token
+      const userData = res.data.user;
+      const token = res.data.token;
+      console.log('提取的用户数据:', userData);
+      console.log('提取的token:', token);
+      setUser(userData, token);
       router.push('/');
     } else {
       error.value = res.errorMsg || '登录失败';

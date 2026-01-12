@@ -5,7 +5,7 @@ import { useUserStore } from '../stores/user';
 import { aiApi } from '../api/ai'
 
 const router = useRouter();
-const { isLoggedIn, user, logout } = useUserStore();
+const { user, logout } = useUserStore();
 const showDropdown = ref(false);
 
 function toggleDropdown() {
@@ -32,7 +32,15 @@ const messages = ref([
 
 const userInput = ref('');
 const isLoading = ref(false);
-const selectedTemplate = ref('');
+let selectedTemplate = '';
+
+// 生成随机的 selectedTemplate
+function generateRandomTemplate() {
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+}
+
+// 初始化 selectedTemplate
+selectedTemplate = generateRandomTemplate();
 
 // 添加点击外部关闭下拉菜单的功能
 function handleClickOutside(event: MouseEvent) {
@@ -100,17 +108,19 @@ function sendMessage() {
 
   isLoading.value = true;
 
+  console.log("当前用户:",localStorage.getItem("user"))
+  console.log("memoryId:", selectedTemplate);
   // 创建10秒超时的Promise
   const timeoutPromise = new Promise((_, reject) => {
     setTimeout(() => {
       reject(new Error('请求超时，请稍后重试'));
-    }, 10000);
+    }, 100000);
   });
 
   // 使用Promise.race实现超时检测
   Promise.race([
     aiApi.getAiResponse({
-      memoryId: selectedTemplate.value,
+      memoryId: selectedTemplate,
       userMessage: userInput.value,
     }),
     timeoutPromise
@@ -130,13 +140,12 @@ function sendMessage() {
     })
     .finally(() => {
       isLoading.value = false;
+      userInput.value = '';
     });
-  userInput.value = '';
-  selectedTemplate.value = '';
 }
 
 function useTemplate(template: { id: string, title: string, placeholder: string, example: string }) {
-  selectedTemplate.value = template.id;
+  selectedTemplate = template.id;
   userInput.value = '';
 }
 
@@ -145,6 +154,8 @@ function clearChat() {
     role: 'assistant',
     content: '对话已清空。有什么新的问题想问吗？'
   }];
+  // 刷新 selectedTemplate
+  selectedTemplate = generateRandomTemplate();
 }
 </script>
 

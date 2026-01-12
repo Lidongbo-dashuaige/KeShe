@@ -1,23 +1,22 @@
-import type { Result, LoginForm, RegisterForm, User } from '../types';
-
-const API_BASE = 'http://localhost:8080/api';
+import request from './axios';
+import type { Result, LoginForm, RegisterForm, User, LoginResponse } from '../types';
 
 export const userApi = {
-  async login(form: LoginForm): Promise<Result<User>> {
-    const res = await fetch(`${API_BASE}/user/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form)
+  async login(form: LoginForm): Promise<Result<LoginResponse>> {
+    const res = await request({
+      url: '/user/login',
+      method: 'post',
+      data: form
     });
-    return res.json();
+    return res.data;
   },
 
   async register(form: RegisterForm): Promise<Result<User>> {
-    const res = await fetch(`${API_BASE}/user/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form)
+    const res = await request({
+      url: '/user/register',
+      method: 'post',
+      data: form
     });
-    return res.json();
+    return res.data;
   }
 };

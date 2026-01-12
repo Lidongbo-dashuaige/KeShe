@@ -43,6 +43,11 @@ export interface User {
   updatedAt?: string;
 }
 
+export interface LoginResponse {
+  user: User;
+  token: string;
+}
+
 //ai相关
 export interface ChatForm {
   memoryId: string;
