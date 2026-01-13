@@ -35,7 +35,7 @@ function goToProfile() {
 
 // 获取URL参数中的分类ID
 const categoryId = computed(() => {
-  return parseInt(route.query.categoryId as string) || 1;
+  return parseInt(route.query.topicId as string) || 1;
 });
 
 const topicName = ref('题库');

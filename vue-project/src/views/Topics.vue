@@ -116,7 +116,7 @@ const filteredTopics = computed(() => {
 
 // 跳转到刷题页面
 function goToPractice(topicId: number) {
-  router.push({ path: '/practice', query: { categoryId: topicId.toString() } });
+  router.push({ path: '/practice', query: { topicId: topicId.toString() } });
 }
 
 // 组件挂载时获取数据
