@@ -201,18 +201,6 @@ function clearChat() {
             </div>
           </div>
 
-          <div class="templates-section">
-            <h3>对话模板</h3>
-            <div class="templates-list">
-              <button v-for="template in templates" :key="template.id"
-                :class="['template-btn', { active: selectedTemplate === template.id }]" @click="useTemplate(template)">
-                <span class="template-title">{{ template.title }}</span>
-                <span class="template-desc">{{ template.placeholder.split('，')[0] }}</span>
-              </button>
-            </div>
-          </div>
-
-
           <div class="tips-section">
             <h3>使用提示</h3>
             <div class="tip-item">
