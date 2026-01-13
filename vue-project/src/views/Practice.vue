@@ -7,7 +7,7 @@ import { RouterLink } from 'vue-router';
 
 const route = useRoute();
 const router = useRouter();
-const { isLoggedIn, user, logout } = useUserStore();
+const { user, logout, isLoggedIn } = useUserStore();
 const currentQuestionIndex = ref(0);
 const selectedAnswer = ref<number | null>(null);
 const showAnswer = ref(false);
