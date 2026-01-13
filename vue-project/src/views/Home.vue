@@ -140,7 +140,6 @@ onUnmounted(() => {
       <div class="hero-image">
         <div class="ai-badge">
           <span>🤖</span>
-          <p>AI 智能分析中...</p>
         </div>
       </div>
     </section>
@@ -185,30 +184,6 @@ onUnmounted(() => {
       </div>
     </section>
 
-    <!-- AI 解析示例 -->
-    <section class="ai-demo">
-      <h2>AI 智能解析</h2>
-      <div class="demo-card">
-        <div class="question">
-          <span class="question-label">题目</span>
-          <p>给定一个二叉树，找出其最大深度。</p>
-        </div>
-        <div class="answer">
-          <span class="answer-label">AI 解析</span>
-          <div class="ai-content">
-            <p>这道题可以使用递归或迭代两种方法解决。</p>
-            <p><strong>思路：</strong>最大深度等于根节点左右子树深度的最大值加一。</p>
-            <p><strong>时间复杂度：</strong>O(n)，需要遍历每个节点</p>
-            <div class="code-example">
-              <pre>def maxDepth(root):
-    if not root:
-        return 0
-    return 1 + max(maxDepth(root.left), maxDepth(root.right))</pre>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
 
     <!-- 底部 -->
     <footer class="footer">

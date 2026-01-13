@@ -60,42 +60,17 @@ onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
 });
 
+// 快捷方式点击处理
+function handleQuickQuestion(question: string) {
+  userInput.value = question;
+}
+
 //TODO 快捷方式无效
 const quickQuestions = [
   { icon: '📝', text: '帮我解释这道题' },
   { icon: '💡', text: '提供解题思路' },
-  { icon: '🔍', text: '分析错误原因' },
   { icon: '📚', text: '推荐相关知识点' },
-  { icon: '✅', text: '验证我的答案' },
   { icon: '🎯', text: '制定学习计划' }
-];
-
-//TODO 模板无效
-const templates = [
-  {
-    id: 'explain',
-    title: '题目解析',
-    placeholder: '请粘贴题目内容，我会帮你详细分析...',
-    example: '给定一个数组 [1,2,3,4,5]，找出所有子数组的和的最大值。'
-  },
-  {
-    id: 'wrong',
-    title: '错题分析',
-    placeholder: '请描述你的错题或错误答案，我会帮你分析原因...',
-    example: '我在一道二叉树的题目上总是出错，不知道如何选择遍历方式。'
-  },
-  {
-    id: 'knowledge',
-    title: '知识咨询',
-    placeholder: '有什么知识点想深入了解？',
-    example: '请帮我解释动态规划的核心思想，以及常见的应用场景。'
-  },
-  {
-    id: 'plan',
-    title: '学习计划',
-    placeholder: '告诉我你的学习目标和当前水平，我来帮你制定计划...',
-    example: '我想在一个月内掌握数据结构与算法，需要准备面试。'
-  }
 ];
 
 function sendMessage() {
@@ -236,6 +211,7 @@ function clearChat() {
               </button>
             </div>
           </div>
+
 
           <div class="tips-section">
             <h3>使用提示</h3>
