@@ -48,7 +48,7 @@ const stats = [
 ];
 
 function goToTopic(id: number) {
-  router.push({ path: '/practice', query: { categoryId: id.toString() } });
+  router.push({ path: '/practice', query: { topicId: id.toString() } });
 }
 
 function goToPractice() {
