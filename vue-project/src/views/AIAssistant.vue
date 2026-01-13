@@ -5,7 +5,7 @@ import { useUserStore } from '../stores/user';
 import { aiApi } from '../api/ai'
 
 const router = useRouter();
-const { user, logout } = useUserStore();
+const { user, logout, isLoggedIn } = useUserStore();
 const showDropdown = ref(false);
 
 function toggleDropdown() {
@@ -197,46 +197,61 @@ function clearChat() {
       </div>
     </header>
 
-    <!-- 主要内容 -->
-    <div class="main-container">
-      <!-- 左侧功能区 -->
-      <aside class="sidebar">
-        <div class="features-section">
-          <h3>快捷功能</h3>
-          <div class="quick-actions">
-            <button v-for="q in quickQuestions" :key="q.text" class="quick-btn">
-              <span class="quick-icon">{{ q.icon }}</span>
-              <span>{{ q.text }}</span>
-            </button>
-          </div>
+    <!-- 未登录提示 -->
+    <div v-if="!isLoggedIn()" class="login-prompt">
+      <div class="prompt-content">
+        <div class="prompt-icon">🔐</div>
+        <h2>请先登录</h2>
+        <p>登录后即可使用AI助手功能，获得个性化学习建议</p>
+        <div class="prompt-actions">
+          <router-link to="/login" class="btn-login-primary">立即登录</router-link>
+          <router-link to="/register" class="btn-register-secondary">注册账号</router-link>
         </div>
+      </div>
+    </div>
 
-        <div class="templates-section">
-          <h3>对话模板</h3>
-          <div class="templates-list">
-            <button v-for="template in templates" :key="template.id"
-              :class="['template-btn', { active: selectedTemplate === template.id }]" @click="useTemplate(template)">
-              <span class="template-title">{{ template.title }}</span>
-              <span class="template-desc">{{ template.placeholder.split('，')[0] }}</span>
-            </button>
+    <!-- 已登录用户看到的内容 -->
+    <div v-else>
+      <!-- 主要内容 -->
+      <div class="main-container">
+        <!-- 左侧功能区 -->
+        <aside class="sidebar">
+          <div class="features-section">
+            <h3>快捷功能</h3>
+            <div class="quick-actions">
+              <button v-for="q in quickQuestions" :key="q.text" class="quick-btn">
+                <span class="quick-icon">{{ q.icon }}</span>
+                <span>{{ q.text }}</span>
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div class="tips-section">
-          <h3>使用提示</h3>
-          <div class="tip-item">
-            <span class="tip-icon">💬</span>
-            <p>描述越详细，回答越准确</p>
+          <div class="templates-section">
+            <h3>对话模板</h3>
+            <div class="templates-list">
+              <button v-for="template in templates" :key="template.id"
+                :class="['template-btn', { active: selectedTemplate === template.id }]" @click="useTemplate(template)">
+                <span class="template-title">{{ template.title }}</span>
+                <span class="template-desc">{{ template.placeholder.split('，')[0] }}</span>
+              </button>
+            </div>
           </div>
-          <div class="tip-item">
-            <span class="tip-icon">📋</span>
-            <p>可以粘贴题目代码和错误信息</p>
+
+          <div class="tips-section">
+            <h3>使用提示</h3>
+            <div class="tip-item">
+              <span class="tip-icon">💬</span>
+              <p>描述越详细，回答越准确</p>
+            </div>
+            <div class="tip-item">
+              <span class="tip-icon">📋</span>
+              <p>可以粘贴题目代码和错误信息</p>
+            </div>
+            <div class="tip-item">
+              <span class="tip-icon">🔄</span>
+              <p>追问可以获取更深入的解释</p>
+            </div>
           </div>
-          <div class="tip-item">
-            <span class="tip-icon">🔄</span>
-            <p>追问可以获取更深入的解释</p>
-          </div>
-        </div>
       </aside>
 
       <!-- 聊天区域 -->
@@ -331,6 +346,7 @@ function clearChat() {
       </aside>
     </div>
   </div>
+</div>
 </template>
 
 <style scoped>
@@ -420,6 +436,78 @@ function clearChat() {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+/* 未登录提示样式 */
+.login-prompt {
+  max-width: 800px;
+  margin: 60px auto;
+  padding: 0 20px;
+}
+
+.prompt-content {
+  background: white;
+  border-radius: 20px;
+  padding: 60px 40px;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+}
+
+.prompt-icon {
+  font-size: 80px;
+  margin-bottom: 30px;
+  color: #667eea;
+}
+
+.prompt-content h2 {
+  font-size: 32px;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.prompt-content p {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 40px;
+  line-height: 1.6;
+}
+
+.prompt-actions {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-login-primary, .btn-register-secondary {
+  padding: 14px 36px;
+  border-radius: 30px;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-login-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.btn-login-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102,126,234,0.4);
+}
+
+.btn-register-secondary {
+  background: white;
+  color: #667eea;
+  border: 2px solid #667eea;
+}
+
+.btn-register-secondary:hover {
+  background: #667eea;
+  color: white;
+  transform: translateY(-2px);
 }
 
 .features-section,

@@ -165,77 +165,93 @@ onMounted(() => {
       </div>
     </header>
 
-    <!-- 页面标题 -->
-    <section class="page-header">
-      <h1>题库中心</h1>
-      <p>选择您感兴趣的学科，开始智能刷题之旅</p>
-    </section>
+    <!-- 未登录提示 -->
+    <div v-if="!isLoggedIn()" class="login-prompt">
+      <div class="prompt-content">
+        <div class="prompt-icon">🔐</div>
+        <h2>请先登录</h2>
+        <p>登录后即可访问题库内容和刷题功能</p>
+        <div class="prompt-actions">
+          <router-link to="/login" class="btn-login-primary">立即登录</router-link>
+          <router-link to="/register" class="btn-register-secondary">注册账号</router-link>
+        </div>
+      </div>
+    </div>
 
-    <!-- 搜索和筛选 -->
-    <section class="search-section">
-      <div class="search-box">
-        <input 
-          v-model="searchKeyword" 
-          type="text" 
-          placeholder="搜索题库名称或描述..."
-        />
-        <span class="search-icon">🔍</span>
-      </div>
-      <div class="filter-bar">
-        <div class="filter-group">
-          <label>分类：</label>
-          <select v-model="selectedCategory">
-            <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
-          </select>
-        </div>
-        <div class="filter-group">
-          <label>难度：</label>
-          <select v-model="selectedDifficulty">
-            <option v-for="diff in difficulties" :key="diff" :value="diff">{{ diff }}</option>
-          </select>
-        </div>
-      </div>
-    </section>
+    <!-- 已登录用户看到的内容 -->
+    <template v-else>
+      <!-- 页面标题 -->
+      <section class="page-header">
+        <h1>题库中心</h1>
+        <p>选择您感兴趣的学科，开始智能刷题之旅</p>
+      </section>
 
-    <!-- 题库列表 -->
-    <section class="topics-section">
-      <div class="topics-grid">
-        <div 
-          v-for="topic in filteredTopics" 
-          :key="topic.id" 
-          class="topic-card"
-        >
-          <div class="topic-header">
-            <span class="topic-icon">{{ topic.icon }}</span>
-            <span :class="['difficulty-tag', topic.difficulty]">{{ topic.difficulty }}</span>
-          </div>
-          <h3>{{ topic.name }}</h3>
-          <p class="topic-desc">{{ topic.description }}</p>
-          <div class="topic-stats">
-            <div class="stat">
-              <span class="stat-value">{{ topic.questionCount }}</span>
-              <span class="stat-label">题目数</span>
-            </div>
-            <div class="stat">
-              <span class="stat-value">{{ topic.completionRate }}%</span>
-              <span class="stat-label">完成率</span>
-            </div>
-            <div class="stat">
-              <span class="stat-value">{{ topic.avgScore }}</span>
-              <span class="stat-label">平均分</span>
-            </div>
-          </div>
-          <button class="start-btn" @click="goToPractice(topic.id)">
-            开始刷题
-          </button>
+      <!-- 搜索和筛选 -->
+      <section class="search-section">
+        <div class="search-box">
+          <input 
+            v-model="searchKeyword" 
+            type="text" 
+            placeholder="搜索题库名称或描述..."
+          />
+          <span class="search-icon">🔍</span>
         </div>
-      </div>
-      
-      <div v-if="filteredTopics.length === 0" class="no-results">
-        <span class="no-icon">📭</span>
-        <p>没有找到相关的题库</p>
-      </div>
-    </section>
+        <div class="filter-bar">
+          <div class="filter-group">
+            <label>分类：</label>
+            <select v-model="selectedCategory">
+              <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>难度：</label>
+            <select v-model="selectedDifficulty">
+              <option v-for="diff in difficulties" :key="diff" :value="diff">{{ diff }}</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <!-- 题库列表 -->
+      <section class="topics-section">
+        <div class="topics-grid">
+          <div 
+            v-for="topic in filteredTopics" 
+            :key="topic.id" 
+            class="topic-card"
+          >
+            <div class="topic-header">
+              <span class="topic-icon">{{ topic.icon }}</span>
+              <span :class="['difficulty-tag', topic.difficulty]">{{ topic.difficulty }}</span>
+            </div>
+            <h3>{{ topic.name }}</h3>
+            <p class="topic-desc">{{ topic.description }}</p>
+            <div class="topic-stats">
+              <div class="stat">
+                <span class="stat-value">{{ topic.questionCount }}</span>
+                <span class="stat-label">题目数</span>
+              </div>
+              <div class="stat">
+                <span class="stat-value">{{ topic.completionRate }}%</span>
+                <span class="stat-label">完成率</span>
+              </div>
+              <div class="stat">
+                <span class="stat-value">{{ topic.avgScore }}</span>
+                <span class="stat-label">平均分</span>
+              </div>
+            </div>
+            <button class="start-btn" @click="goToPractice(topic.id)">
+              开始刷题
+            </button>
+          </div>
+        </div>
+        
+        <div v-if="filteredTopics.length === 0" class="no-results">
+          <span class="no-icon">📭</span>
+          <p>没有找到相关的题库</p>
+        </div>
+      </section>
+    </template>
   </div>
 </template>
 
@@ -243,6 +259,78 @@ onMounted(() => {
 .topics-page {
   min-height: 100vh;
   background: #f5f7fa;
+}
+
+/* 未登录提示样式 */
+.login-prompt {
+  max-width: 800px;
+  margin: 60px auto;
+  padding: 0 20px;
+}
+
+.prompt-content {
+  background: white;
+  border-radius: 20px;
+  padding: 60px 40px;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+}
+
+.prompt-icon {
+  font-size: 80px;
+  margin-bottom: 30px;
+  color: #667eea;
+}
+
+.prompt-content h2 {
+  font-size: 32px;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.prompt-content p {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 40px;
+  line-height: 1.6;
+}
+
+.prompt-actions {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-login-primary, .btn-register-secondary {
+  padding: 14px 36px;
+  border-radius: 30px;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-login-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.btn-login-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102,126,234,0.4);
+}
+
+.btn-register-secondary {
+  background: white;
+  color: #667eea;
+  border: 2px solid #667eea;
+}
+
+.btn-register-secondary:hover {
+  background: #667eea;
+  color: white;
+  transform: translateY(-2px);
 }
 
 .header {

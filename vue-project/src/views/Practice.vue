@@ -298,160 +298,176 @@ onMounted(() => {
       </div>
     </header>
 
-    <!-- 刷题完成页面 -->
-    <div v-if="isComplete" class="result-page">
-      <div class="result-card">
-        <div class="result-icon">🎉</div>
-        <h1>刷题完成！</h1>
-        <div class="score-display">
-          <div class="score-circle">
-          <span class="score">{{ (questions || []).length > 0 ? Math.round((correctCount / (questions || []).length) * 100) : 0 }}%</span>
-          <span class="label">正确率</span>
-        </div>
-        </div>
-        <div class="result-stats">
-          <div class="stat">
-            <span class="value">{{ correctCount }}</span>
-            <span class="label">正确题数</span>
-          </div>
-          <div class="stat">
-            <span class="value">{{ (questions || []).length - correctCount }}</span>
-            <span class="label">错误题数</span>
-          </div>
-          <div class="stat">
-            <span class="value">{{ formatTime(timeSpent) }}</span>
-            <span class="label">用时</span>
-          </div>
-        </div>
-        <div class="result-actions">
-          <button class="btn-primary" @click="restart">重新刷题</button>
-          <router-link to="/topics" class="btn-secondary">选择其他题库</router-link>
+    <!-- 未登录提示 -->
+    <div v-if="!isLoggedIn()" class="login-prompt">
+      <div class="prompt-content">
+        <div class="prompt-icon">🔐</div>
+        <h2>请先登录</h2>
+        <p>登录后即可开始刷题，保存学习进度</p>
+        <div class="prompt-actions">
+          <router-link to="/login" class="btn-login-primary">立即登录</router-link>
+          <router-link to="/register" class="btn-register-secondary">注册账号</router-link>
         </div>
       </div>
     </div>
 
-    <!-- 刷题主界面 -->
-    <div v-else class="practice-content">
-      <!-- 左侧边栏 -->
-      <aside class="sidebar">
-        <div class="topic-info">
-          <h3>{{ topicName }}</h3>
-          <span class="question-count">题目 {{ currentQuestionIndex + 1 }}/{{ (questions || []).length }}</span>
-        </div>
-        
-        <div class="progress-info">
-          <div class="progress-bar">
-            <div class="progress-fill" :style="{ width: progress + '%' }"></div>
+    <!-- 已登录用户看到的内容 -->
+    <template v-else>
+      <!-- 刷题完成页面 -->
+      <div v-if="isComplete" class="result-page">
+        <div class="result-card">
+          <div class="result-icon">🎉</div>
+          <h1>刷题完成！</h1>
+          <div class="score-display">
+            <div class="score-circle">
+            <span class="score">{{ (questions || []).length > 0 ? Math.round((correctCount / (questions || []).length) * 100) : 0 }}%</span>
+            <span class="label">正确率</span>
           </div>
-          <span class="progress-text">{{ Math.round(progress) }}% 完成</span>
-        </div>
-
-        <div class="timer">
-          <span class="timer-icon">⏱️</span>
-          <span class="timer-text">{{ formatTime(timeSpent) }}</span>
-        </div>
-
-        <div class="question-navigator">
-          <h4>题目列表</h4>
-          <div class="navigator-grid">
-            <button
-              v-for="(q, index) in (questions || [])"
-              :key="q.id || index"
-              :class="['nav-btn', {
-                'current': index === currentQuestionIndex,
-                'answered': answers[index] !== undefined,
-                'correct': showAnswer && answers[index] !== undefined && q?.correctAnswer !== undefined && answers[index] === q?.correctAnswer,
-                'wrong': showAnswer && answers[index] !== undefined && q?.correctAnswer !== undefined && answers[index] !== q?.correctAnswer
-              }]"
-              @click="currentQuestionIndex = index"
-            >
-              {{ index + 1 }}
-            </button>
+          </div>
+          <div class="result-stats">
+            <div class="stat">
+              <span class="value">{{ correctCount }}</span>
+              <span class="label">正确题数</span>
+            </div>
+            <div class="stat">
+              <span class="value">{{ (questions || []).length - correctCount }}</span>
+              <span class="label">错误题数</span>
+            </div>
+            <div class="stat">
+              <span class="value">{{ formatTime(timeSpent) }}</span>
+              <span class="label">用时</span>
+            </div>
+          </div>
+          <div class="result-actions">
+            <button class="btn-primary" @click="restart">重新刷题</button>
+            <router-link to="/topics" class="btn-secondary">选择其他题库</router-link>
           </div>
         </div>
-      </aside>
+      </div>
 
-      <!-- 题目区域 -->
-      <main class="main-content">
-        <div class="question-card">
-          <div v-if="currentQuestion" class="question-content">
-            <div class="question-header">
-              <span :class="['difficulty-badge', currentQuestion?.difficulty]">{{ currentQuestion?.difficulty }}</span>
-              <span class="question-type">{{ currentQuestion?.type === 'single' ? '单选题' : '多选题' }}</span>
+      <!-- 刷题主界面 -->
+      <div v-else class="practice-content">
+        <!-- 左侧边栏 -->
+        <aside class="sidebar">
+          <div class="topic-info">
+            <h3>{{ topicName }}</h3>
+            <span class="question-count">题目 {{ currentQuestionIndex + 1 }}/{{ (questions || []).length }}</span>
+          </div>
+          
+          <div class="progress-info">
+            <div class="progress-bar">
+              <div class="progress-fill" :style="{ width: progress + '%' }"></div>
             </div>
-              
-            <div class="question-body">
-              <p class="question-text">{{ currentQuestion?.question }}</p>
-            </div>
+            <span class="progress-text">{{ Math.round(progress) }}% 完成</span>
+          </div>
 
-            <div class="options">
+          <div class="timer">
+            <span class="timer-icon">⏱️</span>
+            <span class="timer-text">{{ formatTime(timeSpent) }}</span>
+          </div>
+
+          <div class="question-navigator">
+            <h4>题目列表</h4>
+            <div class="navigator-grid">
               <button
-                v-for="(option, index) in (currentQuestion?.options || [])"
-                :key="index"
-                :class="['option-btn', getOptionClass(index)]"
-                @click="selectAnswer(index)"
-                :disabled="showAnswer"
+                v-for="(q, index) in (questions || [])"
+                :key="q.id || index"
+                :class="['nav-btn', {
+                  'current': index === currentQuestionIndex,
+                  'answered': answers[index] !== undefined,
+                  'correct': showAnswer && answers[index] !== undefined && q?.correctAnswer !== undefined && answers[index] === q?.correctAnswer,
+                  'wrong': showAnswer && answers[index] !== undefined && q?.correctAnswer !== undefined && answers[index] !== q?.correctAnswer
+                }]"
+                @click="currentQuestionIndex = index"
               >
-                <span class="option-letter">{{ String.fromCharCode(65 + index) }}</span>
-                <span class="option-text">{{ option.text }}</span>
-                <span v-if="showAnswer && currentQuestion && index === currentQuestion?.correctAnswer" class="option-mark">✓</span>
-                <span v-if="showAnswer && selectedAnswer !== null && index === selectedAnswer && currentQuestion && selectedAnswer !== currentQuestion?.correctAnswer" class="option-mark">✗</span>
+                {{ index + 1 }}
               </button>
             </div>
+          </div>
+        </aside>
 
-            <!-- AI 解析 -->
-            <div v-if="showAnswer && currentQuestion" class="analysis-section">
-              <div class="ai-hint">
-                <span class="ai-icon">🤖</span>
-                <div class="ai-content">
-                  <h4>AI 提示</h4>
-                  <p>{{ currentQuestion?.aiHint }}</p>
+        <!-- 题目区域 -->
+        <main class="main-content">
+          <div class="question-card">
+            <div v-if="currentQuestion" class="question-content">
+              <div class="question-header">
+                <span :class="['difficulty-badge', currentQuestion?.difficulty]">{{ currentQuestion?.difficulty }}</span>
+                <span class="question-type">{{ currentQuestion?.type === 'single' ? '单选题' : '多选题' }}</span>
+              </div>
+                
+              <div class="question-body">
+                <p class="question-text">{{ currentQuestion?.question }}</p>
+              </div>
+
+              <div class="options">
+                <button
+                  v-for="(option, index) in (currentQuestion?.options || [])"
+                  :key="index"
+                  :class="['option-btn', getOptionClass(index)]"
+                  @click="selectAnswer(index)"
+                  :disabled="showAnswer"
+                >
+                  <span class="option-letter">{{ String.fromCharCode(65 + index) }}</span>
+                  <span class="option-text">{{ option.text }}</span>
+                  <span v-if="showAnswer && currentQuestion && index === currentQuestion?.correctAnswer" class="option-mark">✓</span>
+                  <span v-if="showAnswer && selectedAnswer !== null && index === selectedAnswer && currentQuestion && selectedAnswer !== currentQuestion?.correctAnswer" class="option-mark">✗</span>
+                </button>
+              </div>
+
+              <!-- AI 解析 -->
+              <div v-if="showAnswer && currentQuestion" class="analysis-section">
+                <div class="ai-hint">
+                  <span class="ai-icon">🤖</span>
+                  <div class="ai-content">
+                    <h4>AI 提示</h4>
+                    <p>{{ currentQuestion?.aiHint }}</p>
+                  </div>
+                </div>
+                <div class="explanation">
+                  <h4>答案解析</h4>
+                  <p><strong>正确答案：</strong>{{ currentQuestion?.correctAnswer !== undefined ? String.fromCharCode(65 + currentQuestion?.correctAnswer) : '暂无' }}. {{ currentQuestion?.options?.[currentQuestion?.correctAnswer]?.text || '暂无' }}</p>
+                  <p>{{ currentQuestion?.explanation }}</p>
                 </div>
               </div>
-              <div class="explanation">
-                <h4>答案解析</h4>
-                <p><strong>正确答案：</strong>{{ currentQuestion?.correctAnswer !== undefined ? String.fromCharCode(65 + currentQuestion?.correctAnswer) : '暂无' }}. {{ currentQuestion?.options?.[currentQuestion?.correctAnswer]?.text || '暂无' }}</p>
-                <p>{{ currentQuestion?.explanation }}</p>
-              </div>
+            </div>
+            <div v-else-if="isLoading" class="loading">
+              <div class="loading-spinner">加载中...</div>
+            </div>
+            <div v-else class="no-data">
+              <div class="no-data-icon">📭</div>
+              <p>暂无题目数据</p>
+            </div>
+
+            <div class="question-actions">
+              <button
+                class="btn-prev"
+                @click="prevQuestion"
+                :disabled="currentQuestionIndex === 0"
+              >
+                上一题
+              </button>
+              
+              <button 
+                v-if="!showAnswer" 
+                class="btn-submit" 
+                @click="submitAnswer"
+                :disabled="selectedAnswer === null"
+              >
+                提交答案
+              </button>
+              
+              <button 
+                v-else 
+                class="btn-next" 
+                @click="nextQuestion"
+              >
+                {{ currentQuestionIndex < (questions || []).length - 1 ? '下一题' : '查看结果' }}
+              </button>
             </div>
           </div>
-          <div v-else-if="isLoading" class="loading">
-            <div class="loading-spinner">加载中...</div>
-          </div>
-          <div v-else class="no-data">
-            <div class="no-data-icon">📭</div>
-            <p>暂无题目数据</p>
-          </div>
-
-          <div class="question-actions">
-            <button
-              class="btn-prev"
-              @click="prevQuestion"
-              :disabled="currentQuestionIndex === 0"
-            >
-              上一题
-            </button>
-            
-            <button 
-              v-if="!showAnswer" 
-              class="btn-submit" 
-              @click="submitAnswer"
-              :disabled="selectedAnswer === null"
-            >
-              提交答案
-            </button>
-            
-            <button 
-              v-else 
-              class="btn-next" 
-              @click="nextQuestion"
-            >
-              {{ currentQuestionIndex < (questions || []).length - 1 ? '下一题' : '查看结果' }}
-            </button>
-          </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -459,8 +475,78 @@ onMounted(() => {
 .practice-page {
   min-height: 100vh;
   background: #f5f7fa;
+}
+
+/* 未登录提示样式 */
+.login-prompt {
+  max-width: 800px;
+  margin: 60px auto;
+  padding: 0 20px;
+}
+
+.prompt-content {
+  background: white;
+  border-radius: 20px;
+  padding: 60px 40px;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+}
+
+.prompt-icon {
+  font-size: 80px;
+  margin-bottom: 30px;
+  color: #667eea;
+}
+
+.prompt-content h2 {
+  font-size: 32px;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.prompt-content p {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 40px;
+  line-height: 1.6;
+}
+
+.prompt-actions {
   display: flex;
-  flex-direction: column;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-login-primary, .btn-register-secondary {
+  padding: 14px 36px;
+  border-radius: 30px;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-login-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.btn-login-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102,126,234,0.4);
+}
+
+.btn-register-secondary {
+  background: white;
+  color: #667eea;
+  border: 2px solid #667eea;
+}
+
+.btn-register-secondary:hover {
+  background: #667eea;
+  color: white;
+  transform: translateY(-2px);
 }
 
 .header {
